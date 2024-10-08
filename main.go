@@ -8,14 +8,24 @@ import (
 
 func main() {
 	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Println("enter info please: ")
 
 	for {
-		fmt.Print("> ")
+		fmt.Print("pokedex > ")
 		if !scanner.Scan() {
 			break
 		}
-		//input := scanner.Text()
+		input := scanner.Text()
+		if command, exists := commands[input]; exists {
+			command()
+		} else {
+			fmt.Println("Sorry this command does not exist. Try these: ")
+			for key := range commands {
+				fmt.Println(key)
+			}
+		}
+		if input == "exit" {
+			break
+		}
 
 	}
 
