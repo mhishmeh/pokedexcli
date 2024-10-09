@@ -6,6 +6,9 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
+
+	"github.com/mhishmeh/pokedexcli/internal/pokecache"
 )
 
 type PokeArea struct {
@@ -19,9 +22,10 @@ type PokeApiResponse struct {
 
 var URL = "https://pokeapi.co/api/v2/location-area"
 var PreviousURL string
+var cache = pokecache.NewCache(20 * time.Second)
 var commands = map[string]func(){
 	"help": func() {
-		fmt.Println("Hello! The help function exists to show you availabe commands! They are currently \nhelp: shows available commands and exit.")
+		fmt.Println("Hello! The help function exists to show you availabe commands! They are currently \nhelp: shows available commands\n exit:quits the REPL.")
 	},
 
 	"exit": func() {
@@ -29,6 +33,20 @@ var commands = map[string]func(){
 	},
 
 	"map": func() {
+		if data, ok := cache.Get(URL); ok {
+			// Use cached data
+			var locations PokeApiResponse
+			if err := json.Unmarshal(data, &locations); err != nil {
+				log.Fatalf("couldn't parse cached data: %v", err)
+			}
+			for _, location := range locations.Results {
+				cleanedLocation := strings.ReplaceAll(location.Location, "{", "")
+				cleanedLocation = strings.ReplaceAll(cleanedLocation, "}", "")
+				fmt.Println(cleanedLocation) // Print without braces
+			}
+			URL = locations.Next
+			PreviousURL = locations.Previous
+		}
 		req, err := http.Get(URL)
 		if err != nil {
 			log.Fatalf("couldnt do %v", err)
@@ -43,6 +61,11 @@ var commands = map[string]func(){
 			cleanedLocation = strings.ReplaceAll(cleanedLocation, "}", "")
 			fmt.Println(cleanedLocation) // Print without braces
 		}
+		cachedData, err := json.Marshal(locations)
+		if err != nil {
+			log.Fatalf("couldn't marshal data to cache: %v", err)
+		}
+		cache.Add(URL, cachedData)
 		URL = locations.Next
 		PreviousURL = locations.Previous
 
@@ -52,6 +75,7 @@ var commands = map[string]func(){
 			fmt.Println("Sorry, this is the first page.")
 			return
 		}
+
 		req, err := http.Get(PreviousURL)
 		if err != nil {
 			log.Fatalf("couldnt do %v", err)

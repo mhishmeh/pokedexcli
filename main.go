@@ -17,6 +17,7 @@ func main() {
 		input := scanner.Text()
 		if command, exists := commands[input]; exists {
 			command()
+
 		} else {
 			fmt.Println("Sorry this command does not exist. Try these: ")
 			for key := range commands {
