@@ -11,6 +11,10 @@ import (
 	"github.com/mhishmeh/pokedexcli/internal/pokecache"
 )
 
+type CatchPokemon struct {
+	Name    string `json:"name"`
+	BaseEXP int    `json:"base_experience"`
+}
 type PokeEncounter struct {
 	Pokemon struct {
 		Name string `json:"name"`
@@ -29,6 +33,8 @@ type PokeApiResponse struct {
 var URL = "https://pokeapi.co/api/v2/location-area"
 var PreviousURL string
 var cache = pokecache.NewCache(20 * time.Second)
+var PokemonURL = "https://pokeapi.co/api/v2/pokemon/"
+
 var commands = map[string]func(args ...string){
 	"help": func(args ...string) {
 		fmt.Println("Hello! The help function exists to show you availabe commands! They are currently \nhelp: shows available commands\n exit:quits the REPL.")
@@ -126,5 +132,21 @@ var commands = map[string]func(args ...string){
 		for _, pokemon := range pokemon.PokemonEncounters {
 			fmt.Println(pokemon.Pokemon.Name)
 		}
+	},
+	"catch": func(name ...string) {
+		url := PokemonURL + "/" + name[0]
+		req, err := http.Get(url)
+		if err != nil {
+			log.Fatalf("couldnt do %v", err)
+		}
+		defer req.Body.Close()
+		var pokemon CatchPokemon
+		if err := json.NewDecoder(req.Body).Decode(&pokemon); err != nil {
+			log.Fatalf("couldnt do %v", err)
+		}
+		fmt.Println("throwing a ball at said pokemon")
+		fmt.Println(pokemon.Name, "has been caught!")
+		fmt.Printf("%s's exp is %v", pokemon.Name, pokemon.BaseEXP)
+
 	},
 }
