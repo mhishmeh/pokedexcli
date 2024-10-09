@@ -14,7 +14,7 @@ import (
 type PokeEncounter struct {
 	Pokemon struct {
 		Name string `json:"name"`
-	} `json:"pokemon"`
+	}
 }
 type PokeArea struct {
 	Location          string          `json:"name"`
